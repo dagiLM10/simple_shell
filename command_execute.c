@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include "main.h"
 /**
  * execute_command - Executes a command with given arguments
  * @command: The command to be executed
@@ -15,6 +16,11 @@
 */
 void execute_command(const char *command, char *argv[], struct stat *statbuf, char **environ)
 {
+char commandPath[1024];
+char *pathToken;
+char *pathEnv;
+char pathCopy[1024];
+bool commandFound = false;
 if (check_file_status(command, statbuf))
 {
 if (execve(command, argv, environ) == -1)
@@ -25,19 +31,15 @@ exit(EXIT_FAILURE);
 }
 else
 {
-char commandPath[1024];
 if (command[0] == '/')
 {
 _strcpy(commandPath, command);
 }
 else
 {
-char *pathEnv = getenv("PATH");
-char pathCopy[1024];
+pathEnv = getenv("PATH");
 _strcpy(pathCopy, pathEnv);
-char *pathToken = myn_strtok(pathCopy, ":");
-char commandPath[1024];
-bool commandFound = false;
+pathToken = my_strtok_dyn(pathCopy, ":");
 while (pathToken != NULL)
 {
 _strcpy(commandPath, pathToken);
@@ -48,7 +50,7 @@ if (check_file_status(commandPath, statbuf))
 commandFound = true;
 break;
 }
-pathToken = myn_strtok(NULL, ":");
+pathToken = my_strtok_dyn(NULL, ":");
 }
 if (!commandFound)
 {

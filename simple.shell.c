@@ -9,185 +9,115 @@
 #include "main.h"
 
 extern char **environ;
-char *read_line(const char *prompt)
+/**
+ * read_line: reads line
+ * Description:reads input to parse it
+ * @prompt: prompt asks
+ * Return: pointer to line
+ */
+char *read_line()
 {
 char *line = NULL;
 size_t bufsize = 0;
 ssize_t inpt;
 inpt = getline(&line, &bufsize, stdin);
-
 if (line[inpt - 1] == '\n')
 {
 line[inpt - 1] = '\0';
 }
 return (line);
 }
-
-void print_environment(char **env)
-{
-while (*env)
-{
-int length = strlen(*env);
-write(STDOUT_FILENO, *env, length);
-write(STDOUT_FILENO, "\n", 1);
-env++;
-}
-}
+/**
+  * custom_write: writes into stdout
+  * Description: writes to prompt the user
+  * @str: input
+  * Return: void
+  */
 void custom_write(const char *str)
 {
-int length = strlen(str);
+int length;
+length = strlen(str);
 write(STDOUT_FILENO, str, length);
 }
-bool command_exists(const char *command)
-{
-bool exists = false;
-char *pathEnv = getenv("PATH");
-char pathCopy[1024];
-strcpy(pathCopy, pathEnv);
-char *pathToken = my_strtok_dyn(pathCopy, ":");
-while (pathToken != NULL)
-{
-char commandPath[1024];
-_strcpy(commandPath, pathToken);
-my_strcat(commandPath, "/");
-my_strcat(commandPath, command);
-struct stat statbuf;
-if (stat(commandPath, &statbuf) == 0)
-{
-if (S_ISREG(statbuf.st_mode) && (statbuf.st_mode & S_IXUSR))
-{
-exists = true;
-break;
-}
-}
-pathToken = my_strtok_dyn(NULL, ":");
-}
-return (exists);
-}
-char **split_string(const char *str, const char *delimiter, int *argc)
-{
-char *strCopy = mi_strdup(str);
-char *token = my_strtok_dyn(strCopy, delimiter);
-char **tokens = malloc(sizeof(char *) * 18);
-int i = 0;
-while (token != NULL && i < 17)
-{
-tokens[i] = mi_strdup(token);
-i++;
-token = my_strtok_dyn(NULL, delimiter);
-}
-tokens[i] = NULL;
-*argc = i;
-free(strCopy);
-return (tokens);
-}
-bool check_file_status (const char *filename, struct stat *statbuf)
-{
-if (stat(filename, statbuf) == -1)
-{
-return (false);
-}
-if (S_ISREG(statbuf->st_mode) && (statbuf->st_mode & S_IXUSR))
-{
-return (true);
-}
-return (false);
-}
+/**
+* free_tokens: is frees memory
+* Description:frees to have enough space
+* @tokens: input
+* Return: void
+*/
 void free_tokens(char **tokens)
 {
-for (int i = 0; tokens[i] != NULL; i++)
+int i;
+for (i = 0; tokens[i] != NULL; i++)
 {
 free(tokens[i]);
 }
 free(tokens);
 }
-void execute_command(const char *command, char *argv[], struct stat *statbuf, char **environ)
-{
-        if (check_file_status(command, statbuf))
-        { // Execute the command directly
-                if (execve(command, argv, environ) == -1)
-                {
-                        perror("Execution error");
-        exit(EXIT_FAILURE);
-}
-}
-else
-{
-        char commandPath[1024];
-        if (command[0] == '/')
-        {
-		_strcpy(commandPath, command);
-        } else {
-char *pathEnv = getenv("PATH");
-char pathCopy[1024]; _strcpy(pathCopy, pathEnv);char *pathToken = my_strtok_dyn(pathCopy, ":");char commandPath[1024];bool commandFound = false;
-while (pathToken != NULL)
-{
-_strcpy(commandPath, pathToken); my_strcat(commandPath, "/"); my_strcat(commandPath, command);
-if (check_file_status(commandPath, statbuf))
-{
-        commandFound = true;
-break;
-}
-pathToken = my_strtok_dyn(NULL, ":");
-}
-if (!commandFound)
-{
-custom_write("Command not found in PATH\n");
-exit(EXIT_FAILURE);
-} // Execute the command using execve
-if (!check_file_status(commandPath, statbuf)){
-        custom_write("Command not found in PATH\n");
-exit(EXIT_FAILURE);
-}
-if (execve(commandPath, argv, environ) == -1)
-{
-perror("Execution error");
-exit(EXIT_FAILURE);
-}
-}
-}
-}
-
+/**
+  * execute_fork: executes fork
+  * Description: calls system call fork
+  * @command: it is a command inpt
+  * @tokens: token inpt
+  * @statbuf: structure
+  * @environ: environment varaiable
+  * Return: void
+  */
 void execute_fork(const char *command, char **tokens, struct stat *statbuf, char **environ)
 {
 pid_t pid = fork();
 if (pid == -1)
 perror("fork error");
 else if (pid == 0)
-execute_command(tokens[0], tokens, statbuf, environ);
+execute_command(command, tokens, statbuf, environ);
 else
 wait(NULL);
 }
 
+/**
+  * perror_handling: handles error situation
+  * Return: void
+*/
 
-
-
-int main(void)
+void perror_handling()
 {
-const char *prompt = "$";
-struct stat statbuf;
-bool fpipe = false;
 char *line = NULL;
-while (1 && !fpipe)
-{
-if (isatty(STDIN_FILENO) == 0)
-fpipe = true;
-custom_write(prompt);
-line = read_line(prompt);
-if (line == NULL)
-{
 perror("Error");
 free(line);
 exit(EXIT_FAILURE);
 }
 
-int argc = 0;
-char **tokens = split_string(line, " ", &argc);
-if (strcmp(tokens[0], "exit") == 0)
+/**
+* main - Entry point of the Simple Shell program *
+* Description: Reads and executes user commands in a loop.
+* Supports built-in commands 'exit' and 'env'.
+* Continues to read and execute commands until 'exit' is entered .
+*
+* Return: 0 on success, or appropriate error code on failure
+*/
+
+int main(void)
 {
-free_tokens(tokens);
-free(line);
-exit(EXIT_SUCCESS);
+struct stat statbuf;
+const char *prompt = "$";
+bool fpipe = false;
+char *line = NULL;
+int argc = 0;
+char **tokens;
+while (1 && !fpipe)
+{
+if (isatty(STDIN_FILENO) == 0)
+fpipe = true;
+custom_write(prompt);
+line = read_line();
+if (line == NULL)
+{
+void perror_handling();
+}
+tokens = split_string(line, " ", &argc);
+if (_strcmp(tokens[0], "exit") == 0)
+{
+handle_exit(line, tokens);
 }
 else if (_strcmp(tokens[0], "env") == 0)
 {
@@ -203,5 +133,9 @@ else
 {
 custom_write("command not found\n");
 }
-}free_tokens(tokens);free(line);}return (0);
+}
+free_tokens(tokens);
+free(line);
+}
+return (0);
 }

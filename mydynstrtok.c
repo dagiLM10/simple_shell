@@ -15,6 +15,7 @@ char *my_strtok_dyn(char *str, const char *delim)
 static char *nextToken;
 char *token = NULL;
 size_t tokenLength;
+char *delimiter;
 if (str != NULL)
 {
 nextToken = str;
@@ -23,7 +24,7 @@ if (nextToken == NULL || *nextToken == '\0')
 {
 return (NULL);
 }
-char *delimiter = my_strchr(nextToken, *delim);
+delimiter = my_strchr(nextToken, *delim);
 if (delimiter != NULL)
 {
 size_t tokenLength = delimiter - nextToken;
@@ -34,7 +35,7 @@ nextToken = delimiter + 1;
 }
 else
 {
-size_t tokenLength = strlen(nextToken);
+tokenLength = strlen(nextToken);
 token = (char *)malloc((tokenLength + 1) * sizeof(char));
 _strcpy(token, nextToken);
 nextToken = NULL;

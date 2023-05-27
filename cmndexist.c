@@ -14,18 +14,20 @@
 */
 bool command_exists(const char *command)
 {
+struct stat statbuf;
 bool exists = false;
+char commandPath[1024];
 char *pathEnv = getenv("PATH");
 char pathCopy[1024];
+char *pathToken;
 _strcpy(pathCopy, pathEnv);
-char *pathToken = strtok(pathCopy, ":");
+pathToken = strtok(pathCopy, ":");
 while (pathToken != NULL)
 {
-char commandPath[1024];
 _strcpy(commandPath, pathToken);
 my_strcat(commandPath, "/");
 my_strcat(commandPath, command);
-struct stat statbuf;
+printf("Checking command path: %s\n", commandPath);
 if (stat(commandPath, &statbuf) == 0)
 {
 if (S_ISREG(statbuf.st_mode) && (statbuf.st_mode & S_IXUSR))
@@ -34,7 +36,7 @@ exists = true;
 break;
 }
 }
-pathToken = strtok(NULL, ":");
+pathToken = my_strtok_dyn(NULL, ":");
 }
 return (exists);
 }
