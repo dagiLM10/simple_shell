@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-#include "shell.h"
+#include "main.h"
 /**
   * check_file_status: checks file status
   * @filename: file name

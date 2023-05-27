@@ -27,7 +27,6 @@ while (pathToken != NULL)
 _strcpy(commandPath, pathToken);
 my_strcat(commandPath, "/");
 my_strcat(commandPath, command);
-printf("Checking command path: %s\n", commandPath);
 if (stat(commandPath, &statbuf) == 0)
 {
 if (S_ISREG(statbuf.st_mode) && (statbuf.st_mode & S_IXUSR))
